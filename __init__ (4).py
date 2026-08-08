@@ -1,19 +1,3 @@
-from ._ai_search import (
-    AzureAISearchTool,
-    BaseAzureAISearchTool,
-    SearchQuery,
-    SearchResult,
-    SearchResults,
-    VectorizableTextQuery,
-)
-from ._config import AzureAISearchConfig
+from .builder import GalleryBuilder, create_default_gallery
 
-__all__ = [
-    "AzureAISearchTool",
-    "BaseAzureAISearchTool",
-    "SearchQuery",
-    "SearchResult",
-    "SearchResults",
-    "AzureAISearchConfig",
-    "VectorizableTextQuery",
-]
+__all__ = ["GalleryBuilder", "create_default_gallery"]

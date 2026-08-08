@@ -1,18 +1,21 @@
-from ._elicitation import Elicitor, StdioElicitor, StdioElicitorConfig, StreamElicitor
-from ._roots import RootsProvider, StaticRootsProvider, StaticRootsProviderConfig
-from ._sampling import ChatCompletionClientSampler, ChatCompletionClientSamplerConfig, Sampler
-from ._session_host import McpSessionHost
+from .authroutes import router
+from .dependencies import get_current_user, require_admin, require_authenticated, require_roles
+from .exceptions import AuthException
+from .manager import AuthManager
+from .middleware import AuthMiddleware
+from .models import AuthConfig, User
+from .wsauth import WebSocketAuthHandler
 
 __all__ = [
-    "Elicitor",
-    "StdioElicitor",
-    "StdioElicitorConfig",
-    "StreamElicitor",
-    "RootsProvider",
-    "StaticRootsProvider",
-    "StaticRootsProviderConfig",
-    "McpSessionHost",
-    "ChatCompletionClientSampler",
-    "ChatCompletionClientSamplerConfig",
-    "Sampler",
+    "AuthManager",
+    "AuthMiddleware",
+    "AuthConfig",
+    "User",
+    "AuthException",
+    "router",
+    "get_current_user",
+    "require_authenticated",
+    "require_roles",
+    "require_admin",
+    "WebSocketAuthHandler",
 ]

@@ -1,11 +1,3 @@
-from ._ollama_client import OllamaChatCompletionClient
-from .config import (
-    BaseOllamaClientConfigurationConfigModel,
-    CreateArgumentsConfigModel,
-)
+from .teammanager import TeamManager
 
-__all__ = [
-    "OllamaChatCompletionClient",
-    "BaseOllamaClientConfigurationConfigModel",
-    "CreateArgumentsConfigModel",
-]
+__all__ = ["TeamManager"]
