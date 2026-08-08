@@ -1,12 +1,14 @@
-# **Multi-Agent PostgreSQL Data Management System with AutoGen and Azure PostgreSQL**
+# Python and dotnet agents interoperability sample
 
+This sample demonstrates how to create a Python agent that interacts with a .NET agent.
+To run the sample, check out the autogen repository.
+Then do the following:
 
-<div align="center">
-  <img src="https://github.com/mehrsa/MultiAgent_Azure_PostgreSQL_AutoGen0.4/blob/main/misc/Drawing%203.png" alt="Architecture">
-</div>
+1. Navigate to autogen/dotnet/samples/Hello/Hello.AppHost
+2. Run `dotnet run` to start the .NET Aspire app host, which runs three projects:
+    - Backend (the .NET Agent Runtime)
+    - HelloAgent (the .NET Agent)
+    - this Python agent - hello_python_agent.py
+3. The AppHost will start the Aspire dashboard on [https://localhost:15887](https://localhost:15887).
 
-Go to below repository to try out a demo demonstrating how to build a **multi-agent AI system** for managing shipment data stored on an Azure PostgreSQL database:
-
-[MultiAgent_Azure_PostgreSQL_AutoGen](https://github.com/Azure-Samples/MultiAgent_Azure_PostgreSQL_AutoGen0.4/tree/main)
-
-
+The Python agent will interact with the .NET agent by sending a message to the .NET runtime, which will relay the message to the .NET agent.

@@ -1,3 +1,3 @@
-from .builder import GalleryBuilder, create_default_gallery
+from .__main__ import main
 
-__all__ = ["GalleryBuilder", "create_default_gallery"]
+__all__ = ["main"]
