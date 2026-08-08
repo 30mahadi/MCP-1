@@ -1,56 +1,43 @@
-from typing import List
+from typing import Any, Mapping, Optional, Union
 
-from autogen_core import Component, ComponentBase
+from autogen_core.models import ModelCapabilities, ModelInfo  # type: ignore
+from ollama import Options
 from pydantic import BaseModel
-from typing_extensions import Self
-
-from azure.core.credentials import TokenProvider
-from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from typing_extensions import TypedDict
 
 
-class TokenProviderConfig(BaseModel):
-    provider_kind: str
-    scopes: List[str]
+# response_format MUST be a pydantic.BaseModel type or None
+# TODO: check if we can extend response_format to support json and/or dict
+# TODO: extend arguments to all AsyncClient supported args
+class CreateArguments(TypedDict, total=False):
+    model: str
+    host: Optional[str]
+    response_format: Any
 
 
-class AzureTokenProvider(ComponentBase[TokenProviderConfig], Component[TokenProviderConfig]):
-    component_type = "token_provider"
-    component_config_schema = TokenProviderConfig
-    component_provider_override = "autogen_ext.auth.azure.AzureTokenProvider"
+class BaseOllamaClientConfiguration(CreateArguments, total=False):
+    follow_redirects: bool
+    timeout: Any
+    headers: Optional[Mapping[str, str]]
+    model_capabilities: ModelCapabilities  # type: ignore
+    model_info: ModelInfo
+    """What functionality the model supports, determined by default from model name but is overriden if value passed."""
+    options: Optional[Union[Mapping[str, Any], Options]]
 
-    def __init__(self, credential: TokenProvider, *scopes: str):
-        self.credential = credential
-        self.scopes = list(scopes)
-        self.provider = get_bearer_token_provider(self.credential, *self.scopes)
 
-    def __call__(self) -> str:
-        return self.provider()
+# Pydantic equivalents of the above TypedDicts
+# response_format MUST be a pydantic.BaseModel type or None
+class CreateArgumentsConfigModel(BaseModel):
+    model: str
+    host: str | None = None
+    response_format: Any = None
 
-    def _to_config(self) -> TokenProviderConfig:
-        """Dump the configuration that would be requite to create a new instance of a component matching the configuration of this instance.
 
-        Returns:
-            T: The configuration of the component.
-        """
-
-        if isinstance(self.credential, DefaultAzureCredential):
-            # NOTE: we are not currently inspecting the chained credentials, so this could result in a loss of information
-            return TokenProviderConfig(provider_kind="DefaultAzureCredential", scopes=self.scopes)
-        else:
-            raise ValueError("Only DefaultAzureCredential is supported")
-
-    @classmethod
-    def _from_config(cls, config: TokenProviderConfig) -> Self:
-        """Create a new instance of the component from a configuration object.
-
-        Args:
-            config (T): The configuration object.
-
-        Returns:
-            Self: The new instance of the component.
-        """
-
-        if config.provider_kind == "DefaultAzureCredential":
-            return cls(DefaultAzureCredential(), *config.scopes)
-        else:
-            raise ValueError("Only DefaultAzureCredential is supported")
+class BaseOllamaClientConfigurationConfigModel(CreateArgumentsConfigModel):
+    # Defaults for ollama.AsyncClient
+    follow_redirects: bool = True
+    timeout: Any = None
+    headers: Mapping[str, str] | None = None
+    model_capabilities: ModelCapabilities | None = None  # type: ignore
+    model_info: ModelInfo | None = None
+    options: Mapping[str, Any] | Options | None = None

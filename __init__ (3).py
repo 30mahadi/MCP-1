@@ -1,10 +1,4 @@
-from ._docker_jupyter import DockerJupyterCodeExecutor, DockerJupyterCodeResult
-from ._jupyter_server import DockerJupyterServer, JupyterClient, JupyterKernelClient
+from ._azure_ai_client import AzureAIChatCompletionClient
+from .config import AzureAIChatCompletionClientConfig
 
-__all__ = [
-    "DockerJupyterCodeExecutor",
-    "DockerJupyterServer",
-    "JupyterClient",
-    "JupyterKernelClient",
-    "DockerJupyterCodeResult",
-]
+__all__ = ["AzureAIChatCompletionClient", "AzureAIChatCompletionClientConfig"]
