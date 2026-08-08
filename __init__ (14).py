@@ -1,5 +1,7 @@
-from ._replay_chat_completion_client import ReplayChatCompletionClient
+"""
+This module implements utility classes for formatting/printing agent messages.
+"""
 
-__all__ = [
-    "ReplayChatCompletionClient",
-]
+from ._rich_console import RichConsole
+
+__all__ = ["RichConsole"]

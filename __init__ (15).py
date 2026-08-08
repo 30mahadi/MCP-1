@@ -1,3 +1,3 @@
-from ._sk_chat_completion_adapter import SKChatCompletionAdapter
+import importlib.metadata
 
-__all__ = ["SKChatCompletionAdapter"]
+__version__ = importlib.metadata.version("autogen_ext")
