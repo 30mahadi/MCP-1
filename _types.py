@@ -1,61 +1,78 @@
-from typing import Any, Awaitable, Callable, Iterable, List, Literal, Optional, TypeGuard, Union
+from dataclasses import dataclass
+from typing import Dict
 
-from autogen_core.tools import Tool
-from pydantic import BaseModel, Field
-
-from azure.ai.agents.models import (
-    AzureAISearchToolDefinition,
-    AzureFunctionToolDefinition,
-    BingGroundingToolDefinition,
-    CodeInterpreterToolDefinition,
-    FileSearchToolDefinition,
-    MessageTextUrlCitationAnnotation,
+from autogen_core.models import (
+    LLMMessage,
 )
-
-ListToolType = Iterable[
-    Union[
-        Literal[
-            "file_search",
-            "code_interpreter",
-            "bing_grounding",
-            "azure_ai_search",
-            "azure_function",
-        ],
-        BingGroundingToolDefinition,
-        CodeInterpreterToolDefinition,
-        AzureAISearchToolDefinition,
-        FileSearchToolDefinition,
-        AzureFunctionToolDefinition,
-        Tool,
-        Callable[..., Any],
-        Callable[..., Awaitable[Any]],
-    ]
-]
+from autogen_ext.models.openai.config import AzureOpenAIClientConfiguration
+from pydantic import BaseModel
 
 
-class AzureAIAgentState(BaseModel):
-    """
-    Represents the state of an AzureAIAgent that can be saved and loaded.
+class GroupChatMessage(BaseModel):
+    """Implements a sample message sent by an LLM agent"""
 
-    This state model keeps track of persistent information about an agent session
-    including agent and thread identifiers, message history, and associated resources.
-
-    Attributes:
-        type (str): The type identifier for the state object, always "AzureAIAgentState"
-        agent_id (Optional[str]): The ID of the Azure AI agent
-        thread_id (Optional[str]): The ID of the conversation thread
-        initial_message_ids (List[str]): List of message IDs from the initial state
-        vector_store_id (Optional[str]): The ID of the associated vector store for file search
-        uploaded_file_ids (List[str]): List of IDs for files uploaded to the agent
-    """
-
-    type: str = Field(default="AzureAIAgentState")
-    agent_id: Optional[str] = None
-    thread_id: Optional[str] = None
-    initial_message_ids: List[str] = Field(default_factory=list)
-    vector_store_id: Optional[str] = None
-    uploaded_file_ids: List[str] = Field(default_factory=list)
+    body: LLMMessage
 
 
-def has_annotations(obj: Any) -> TypeGuard[list[MessageTextUrlCitationAnnotation]]:
-    return obj is not None and isinstance(obj, list)
+class RequestToSpeak(BaseModel):
+    """Message type for agents to speak"""
+
+    pass
+
+
+@dataclass
+class MessageChunk:
+    message_id: str
+    text: str
+    author: str
+    finished: bool
+
+    def __str__(self) -> str:
+        return f"{self.author}({self.message_id}): {self.text}"
+
+
+# Define Host configuration model
+class HostConfig(BaseModel):
+    hostname: str
+    port: int
+
+    @property
+    def address(self) -> str:
+        return f"{self.hostname}:{self.port}"
+
+
+# Define GroupChatManager configuration model
+class GroupChatManagerConfig(BaseModel):
+    topic_type: str
+    max_rounds: int
+
+
+# Define WriterAgent configuration model
+class ChatAgentConfig(BaseModel):
+    topic_type: str
+    description: str
+    system_message: str
+
+
+# Define UI Agent configuration model
+class UIAgentConfig(BaseModel):
+    topic_type: str
+    artificial_stream_delay_seconds: Dict[str, float]
+
+    @property
+    def min_delay(self) -> float:
+        return self.artificial_stream_delay_seconds.get("min", 0.0)
+
+    @property
+    def max_delay(self) -> float:
+        return self.artificial_stream_delay_seconds.get("max", 0.0)
+
+
+# Define the overall AppConfig model
+class AppConfig(BaseModel):
+    host: HostConfig
+    group_chat_manager: GroupChatManagerConfig
+    writer_agent: ChatAgentConfig
+    editor_agent: ChatAgentConfig
+    ui_agent: UIAgentConfig
+    client_config: AzureOpenAIClientConfiguration = None  # type: ignore[assignment] # This was required to do custom instantiation in `load_config`

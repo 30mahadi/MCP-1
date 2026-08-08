@@ -1,45 +1,43 @@
-from autogen_core._subscription import Subscription
-from autogen_core._type_prefix_subscription import TypePrefixSubscription
-from autogen_core._type_subscription import TypeSubscription
+import logging
+import os
+from typing import Any, Iterable, Type
 
-from .protos import agent_worker_pb2
-
-
-def subscription_to_proto(subscription: Subscription) -> agent_worker_pb2.Subscription:
-    match subscription:
-        case TypeSubscription(topic_type=topic_type, agent_type=agent_type, id=id):
-            return agent_worker_pb2.Subscription(
-                id=id,
-                typeSubscription=agent_worker_pb2.TypeSubscription(topic_type=topic_type, agent_type=agent_type),
-            )
-        case TypePrefixSubscription(topic_type_prefix=topic_type_prefix, agent_type=agent_type, id=id):
-            return agent_worker_pb2.Subscription(
-                id=id,
-                typePrefixSubscription=agent_worker_pb2.TypePrefixSubscription(
-                    topic_type_prefix=topic_type_prefix, agent_type=agent_type
-                ),
-            )
-        case _:
-            raise ValueError("Unsupported subscription type.")
+import yaml
+from _types import AppConfig
+from autogen_core import MessageSerializer, try_get_known_serializers_for_type
+from autogen_ext.models.openai.config import AzureOpenAIClientConfiguration
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
 
-def subscription_from_proto(subscription: agent_worker_pb2.Subscription) -> Subscription:
-    oneofcase = subscription.WhichOneof("subscription")
-    match oneofcase:
-        case "typeSubscription":
-            type_subscription_msg: agent_worker_pb2.TypeSubscription = subscription.typeSubscription
-            return TypeSubscription(
-                topic_type=type_subscription_msg.topic_type,
-                agent_type=type_subscription_msg.agent_type,
-                id=subscription.id,
-            )
+def load_config(file_path: str = os.path.join(os.path.dirname(__file__), "config.yaml")) -> AppConfig:
+    model_client = {}
+    with open(file_path, "r") as file:
+        config_data = yaml.safe_load(file)
+        model_client = config_data["client_config"]
+        del config_data["client_config"]
+        app_config = AppConfig(**config_data)
+    # This was required as it couldn't automatically instantiate AzureOpenAIClientConfiguration
 
-        case "typePrefixSubscription":
-            type_prefix_subscription_msg: agent_worker_pb2.TypePrefixSubscription = subscription.typePrefixSubscription
-            return TypePrefixSubscription(
-                topic_type_prefix=type_prefix_subscription_msg.topic_type_prefix,
-                agent_type=type_prefix_subscription_msg.agent_type,
-                id=subscription.id,
-            )
-        case None:
-            raise ValueError("Invalid subscription message.")
+    aad_params = {}
+    if len(model_client.get("api_key", "")) == 0:
+        aad_params["azure_ad_token_provider"] = get_bearer_token_provider(
+            DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
+        )
+
+    app_config.client_config = AzureOpenAIClientConfiguration(**model_client, **aad_params)  # type: ignore[typeddict-item]
+    return app_config
+
+
+def get_serializers(types: Iterable[Type[Any]]) -> list[MessageSerializer[Any]]:
+    serializers = []
+    for type in types:
+        serializers.extend(try_get_known_serializers_for_type(type))  # type: ignore
+    return serializers  # type: ignore [reportUnknownVariableType]
+
+
+# TODO: This is a helper function to get rid of a lot of logs until we find exact loggers to properly set log levels ...
+def set_all_log_levels(log_leve: int):
+    # Iterate through all existing loggers and set their levels
+    for _, logger in logging.root.manager.loggerDict.items():
+        if isinstance(logger, logging.Logger):  # Ensure it's actually a Logger object
+            logger.setLevel(log_leve)  # Adjust to DEBUG or another level as needed
